@@ -1,7 +1,6 @@
-/* eslint-disable */
-const { createClient } = require("@supabase/supabase-js");
+import { createClient } from "@supabase/supabase-js";
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -16,26 +15,26 @@ module.exports = async function handler(req, res) {
 
     const supabase = createClient(url, key);
 
-    const isAdmin = () => {
-      const secret = req.headers["x-admin-secret"];
-      return Boolean(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
-    };
+    const secret = req.headers["x-admin-secret"];
+    const isAdmin = Boolean(
+      secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET
+    );
 
-    const id = req.query?.id;
+    const { id } = req.query;
     if (!id) return res.status(400).json({ error: "Missing id" });
 
     if (req.method === "PUT") {
-      if (!isAdmin()) return res.status(401).json({ error: "Unauthorized" });
+      if (!isAdmin) return res.status(401).json({ error: "Unauthorized" });
 
-      const body = req.body || {};
+      const b = req.body || {};
       const patch = {};
 
-      if (body.name !== undefined) patch.name = String(body.name);
-      if (body.description !== undefined) patch.description = String(body.description);
-      if (body.image !== undefined) patch.image = String(body.image);
-      if (body.category !== undefined) patch.category = String(body.category);
-      if (body.price !== undefined) patch.price = Number(body.price);
-      if (body.stock !== undefined) patch.stock = Number(body.stock);
+      if (b.name !== undefined) patch.name = String(b.name);
+      if (b.description !== undefined) patch.description = String(b.description);
+      if (b.image !== undefined) patch.image = String(b.image);
+      if (b.category !== undefined) patch.category = String(b.category);
+      if (b.price !== undefined) patch.price = Number(b.price);
+      if (b.stock !== undefined) patch.stock = Number(b.stock);
 
       const { data, error } = await supabase
         .from("products")
@@ -49,7 +48,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (req.method === "DELETE") {
-      if (!isAdmin()) return res.status(401).json({ error: "Unauthorized" });
+      if (!isAdmin) return res.status(401).json({ error: "Unauthorized" });
 
       const { error } = await supabase.from("products").delete().eq("id", id);
       if (error) return res.status(500).json({ error: error.message });
@@ -61,4 +60,4 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     return res.status(500).json({ error: String(e?.message || e) });
   }
-};
+}

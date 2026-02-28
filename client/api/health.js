@@ -1,3 +1,3 @@
-module.exports = (req, res) => {
-  res.status(200).json({ ok: true });
+module.exports = function handler(req, res) {
+  res.status(200).send("OK");
 };

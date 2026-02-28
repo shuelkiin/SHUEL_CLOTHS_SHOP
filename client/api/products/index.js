@@ -1,6 +1,3 @@
-/* eslint-disable */
-const { createClient } = require("@supabase/supabase-js");
-
 module.exports = async function handler(req, res) {
   try {
     const url = process.env.SUPABASE_URL;
@@ -9,49 +6,39 @@ module.exports = async function handler(req, res) {
     if (!url || !key) {
       return res.status(500).json({
         error: "Missing env vars",
-        hasSUPABASE_URL: Boolean(url),
-        hasSUPABASE_SERVICE_ROLE_KEY: Boolean(key),
+        hasSUPABASE_URL: !!url,
+        hasSUPABASE_SERVICE_ROLE_KEY: !!key
       });
     }
 
+    const { createClient } = require("@supabase/supabase-js");
     const supabase = createClient(url, key);
 
-    const isAdmin = () => {
-      const secret = req.headers["x-admin-secret"];
-      return Boolean(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
-    };
+    const secret = req.headers["x-admin-secret"];
+    const isAdmin = !!(secret && process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET);
 
     if (req.method === "GET") {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
-
+      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (error) return res.status(500).json({ error: error.message });
       return res.status(200).json(data || []);
     }
 
     if (req.method === "POST") {
-      if (!isAdmin()) return res.status(401).json({ error: "Unauthorized" });
+      if (!isAdmin) return res.status(401).json({ error: "Unauthorized" });
 
-      const body = req.body || {};
+      const b = req.body || {};
       const payload = {
-        name: String(body.name ?? "").trim(),
-        description: String(body.description ?? ""),
-        price: Number(body.price ?? 0),
-        image: String(body.image ?? ""),
-        category: String(body.category ?? "Uncategorized"),
-        stock: Number(body.stock ?? 0),
+        name: String(b.name ?? "").trim(),
+        description: String(b.description ?? ""),
+        price: Number(b.price ?? 0),
+        image: String(b.image ?? ""),
+        category: String(b.category ?? "Uncategorized"),
+        stock: Number(b.stock ?? 0)
       };
 
       if (!payload.name) return res.status(400).json({ error: "Name required" });
 
-      const { data, error } = await supabase
-        .from("products")
-        .insert(payload)
-        .select("*")
-        .single();
-
+      const { data, error } = await supabase.from("products").insert(payload).select("*").single();
       if (error) return res.status(500).json({ error: error.message });
       return res.status(201).json(data);
     }

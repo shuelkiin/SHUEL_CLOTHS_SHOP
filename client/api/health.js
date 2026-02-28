@@ -1,3 +1,1 @@
-module.exports = function handler(req, res) {
-  res.status(200).send("OK");
-};
+module.exports = (req, res) => res.status(200).send("OK");

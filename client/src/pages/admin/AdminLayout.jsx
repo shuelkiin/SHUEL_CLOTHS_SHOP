@@ -1,88 +1,87 @@
-import { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../state/auth.store";
+import { useProductsStore } from "../../state/products.store";
+import { bootstrapAdminSecret } from "../../state/admin.bootstrap";
 
 export default function AdminLayout() {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
-  const user = useAuthStore((s) => s.user);
+
+  const fetchProducts = useProductsStore((s) => s.fetchProducts);
 
   const [open, setOpen] = useState(false);
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
+  useEffect(() => {
+    bootstrapAdminSecret();
+    fetchProducts().catch(() => {});
+  }, [fetchProducts]);
 
-  function closeMenu() {
-    setOpen(false);
-  }
+  const onLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="adminShell">
-      {/* Topbar (mobile) */}
-      <header className="adminTopbar">
+      {/* Mobile topbar */}
+      <div className="adminTopbar">
         <button className="btn btn-ghost" onClick={() => setOpen(true)}>
           ☰
         </button>
-
         <div style={{ fontWeight: 900 }}>Admin Panel</div>
-
-        <button className="btn btn-dark" onClick={handleLogout}>
+        <button className="btn btn-dark" onClick={onLogout}>
           Logout
         </button>
-      </header>
+      </div>
 
-      {/* Overlay (mobile when sidebar open) */}
+      {/* Overlay */}
       <div
         className={`adminOverlay ${open ? "show" : ""}`}
-        onClick={closeMenu}
+        onClick={() => setOpen(false)}
       />
 
       {/* Sidebar */}
       <aside className={`adminSidebar2 ${open ? "open" : ""}`}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 18 }}>Admin</div>
-            <div style={{ fontSize: 12, color: "var(--muted)" }}>{user?.email}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontWeight: 900, fontSize: 18 }}>Admin</div>
+          <div style={{ color: "var(--muted)", fontSize: 13 }}>
+            Business control center
           </div>
-
-          <button className="btn btn-ghost" onClick={closeMenu}>
-            ✕
-          </button>
         </div>
 
-        <div style={{ height: 12 }} />
-
-        <NavItem to="/admin/dashboard" label="Dashboard" onClick={closeMenu} />
-        <NavItem to="/admin/products" label="Products" onClick={closeMenu} />
-        <NavItem to="/admin/categories" label="Categories" onClick={closeMenu} />
-        <NavItem to="/admin/orders" label="Orders" onClick={closeMenu} />
-        <NavItem to="/admin/clients" label="Clients" onClick={closeMenu} />
+        <div className="adminNav" style={{ marginTop: 10 }}>
+          <NavLink className="adminNavLink2" to="/admin/dashboard" onClick={() => setOpen(false)}>
+            Dashboard
+          </NavLink>
+          <NavLink className="adminNavLink2" to="/admin/products" onClick={() => setOpen(false)}>
+            Products
+          </NavLink>
+          <NavLink className="adminNavLink2" to="/admin/new-product" onClick={() => setOpen(false)}>
+            Add Product
+          </NavLink>
+          <NavLink className="adminNavLink2" to="/admin/categories" onClick={() => setOpen(false)}>
+            Categories
+          </NavLink>
+          <NavLink className="adminNavLink2" to="/admin/clients" onClick={() => setOpen(false)}>
+            Clients
+          </NavLink>
+          <NavLink className="adminNavLink2" to="/admin/orders" onClick={() => setOpen(false)}>
+            Orders
+          </NavLink>
+        </div>
 
         <div style={{ marginTop: "auto" }}>
-          <button className="btn btn-dark" style={{ width: "100%" }} onClick={handleLogout}>
+          <button className="btn btn-dark" style={{ width: "100%" }} onClick={onLogout}>
             Logout
           </button>
         </div>
       </aside>
 
-      {/* Content */}
+      {/* Main */}
       <main className="adminMain2">
         <Outlet />
       </main>
     </div>
-  );
-}
-
-function NavItem({ to, label, onClick }) {
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className={({ isActive }) => `adminNavLink2 ${isActive ? "active" : ""}`}
-    >
-      {label}
-    </NavLink>
   );
 }
